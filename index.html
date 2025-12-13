@@ -16,10 +16,35 @@
       --white:#ffffff;
       --max-width:1200px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+
+      .menu-toggle{display:none;font-size:26px;background:none;border:none;cursor:pointer;color:#0b3b59}
+
+.menu-backdrop{
+  position:fixed;inset:0;background:rgba(255,255,255,.6);
+  backdrop-filter:blur(8px);opacity:0;pointer-events:none;
+  transition:.25s;z-index:40
+}
+.menu-backdrop.active{opacity:1;pointer-events:auto}
+
+.mobile-menu{
+  position:fixed;top:0;left:0;right:0;background:white;
+  transform:translateY(-100%);transition:.3s;
+  z-index:50;display:flex;flex-direction:column
+}
+.mobile-menu.active{transform:translateY(64px)}
+.mobile-menu a{
+  padding:16px 22px;border-top:1px solid #e5e7eb;
+  text-decoration:none;color:#0b3b59;font-weight:600
+}
+
+@media(max-width:750px){
+  nav ul{display:none}
+  .menu-toggle{display:block}
     }
 
     *{box-sizing:border-box}
-    body{
+    
+      body{
       margin:0;
       background:linear-gradient(180deg,#071018 0%, #071018 100%);
       color:var(--white);
@@ -266,7 +291,29 @@
   </style>
 </head>
 
-<body>
+<script>
+  const t=document.getElementById("menuToggle")
+  const m=document.getElementById("mobileMenu")
+  const b=document.getElementById("menuBackdrop")
+  const links=m.querySelectorAll("a")
+
+  function closeMenu(){
+    m.classList.remove("active")
+    b.classList.remove("active")
+    t.textContent="☰"
+  }
+
+  t.onclick=()=>{
+    const open=m.classList.toggle("active")
+    b.classList.toggle("active")
+    t.textContent=open?"✕":"☰"
+  }
+
+  b.onclick=closeMenu
+  links.forEach(l=>l.onclick=closeMenu)
+</script>
+  
+  <body>
 
   <div class="trust-banner" id="trustBanner">
     <span>An official website of the Moeezland government — secure connection & verified domain.</span>
@@ -295,28 +342,17 @@
         <div><h1>Moeezland حكومة معزلاند</h1></div>
       </div>
 
-<nav>
+<nav class="desktop-nav">
   <ul>
     <li><a href="/">Home</a></li>
-
-    <li>
-      <a href="https://upmgov.org" target="_blank">
-        Membership
-      </a>
-    </li>
-
+    <li><a href="https://upmgov.org" target="_blank">Membership</a></li>
     <li><a href="/location.html">Location</a></li>
-
-    <li>
-      <a href="https://forms.gle/xMVx6KbQZQD8LMrB7" target="_blank">
-        Join Parliament
-      </a>
-    </li>
-
+    <li><a href="https://forms.gle/xMVx6KbQZQD8LMrB7" target="_blank">Join Parliament</a></li>
     <li><a href="/press.html">Press</a></li>
-    
   </ul>
 </nav>
+
+<button class="menu-toggle" id="menuToggle">☰</button>
 
       <!-- UPDATED LINK -->
       <a class="cta" href="https://portal.moeezland.com" target="_blank">Your account</a>
@@ -324,6 +360,16 @@
     </div>
   </header>
 
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/">Home</a>
+  <a href="https://upmgov.org" target="_blank">Membership</a>
+  <a href="/location.html">Location</a>
+  <a href="https://forms.gle/xMVx6KbQZQD8LMrB7" target="_blank">Join Parliament</a>
+  <a href="/press.html">Press</a>
+</div>
+  
   <section class="hero">
     <div class="media"></div>
 
@@ -506,6 +552,7 @@
 
 </body>
 </html>
+
 
 
 
