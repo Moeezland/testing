@@ -8,6 +8,7 @@
   <!-- intl-tel-input -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/css/intlTelInput.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/intlTelInput.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/utils.js"></script>
 
   <style>
     body{
@@ -217,8 +218,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const iti = window.intlTelInput ?
-  window.intlTelInput(document.getElementById("phoneInput"), { separateDialCode:true }) : null;
+const iti = window.intlTelInput(document.getElementById("phoneInput"), {
+  separateDialCode: true,
+  utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/utils.js"
+});
 
 async function exists(field,val){
   if(!val) return false;
@@ -233,7 +236,10 @@ registerBtn.onclick = async () => {
   const email = regEmail.value.trim().toLowerCase();
   const password = regPassword.value.trim();
   const civil = civilId.value.replace(/\D/g,"");
-  const phone = iti ? iti.getNumber() : "";
+
+  const phone = iti.isValidNumber()
+    ? iti.getNumber(intlTelInputUtils.numberFormat.E164)
+    : "";
 
   if(!legalName || !username || !email || !password){
     message.textContent="Full name, username, email and password are required.";
@@ -246,23 +252,30 @@ registerBtn.onclick = async () => {
   }
 
   try{
-    if(await exists("username_lower",username.toLowerCase())) throw "Username taken";
-    if(await exists("email_lower",email)) throw "Email registered";
-    if(civil && await exists("civilId",civil)) throw "Civil ID used";
-    if(phone && await exists("phone",phone)) throw "Phone used";
+    if(await exists("username_lower",username.toLowerCase()))
+      throw "Username already taken.";
+
+    if(await exists("email_lower",email))
+      throw "Email already registered.";
+
+    if(civil && await exists("civilId",civil))
+      throw "Civil ID already used.";
+
+    if(phone && await exists("phone",phone))
+      throw "Phone number already registered with another account.";
 
     const cred = await createUserWithEmailAndPassword(auth,email,password);
     const uid = cred.user.uid;
 
     await runTransaction(db,async tx=>{
       tx.set(doc(db,"users",uid),{
-        legalName,              // 👈 EXACT FIELD NAME
+        legalName,
         username,
         username_lower:username.toLowerCase(),
         email,
         email_lower:email,
-        civilId:civil || "",
-        phone:phone || "",
+        civilId: civil || "",
+        phone: phone || "",
         createdAt:new Date().toISOString()
       });
 
@@ -277,7 +290,7 @@ registerBtn.onclick = async () => {
 
     window.location.href="dashboard.html";
   }catch(e){
-    message.textContent=e.toString();
+    message.textContent = e.toString();
   }
 };
 
