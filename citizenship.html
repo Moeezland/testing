@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Citizenship | Moeezland</title>
+
+  <style>
+    :root{
+      --primary:#002e63;
+      --bg:#edf2f7;
+      --white:#ffffff;
+      --green:#2e7d32;
+      --yellow:#b7791f;
+      --muted:#4a5568;
+      --border:#e2e8f0;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:"Segoe UI",system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--primary);
+    }
+
+    header{
+      background:var(--white);
+      border-bottom:1px solid var(--border);
+      padding:14px 28px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:18px;
+      font-weight:600;
+    }
+
+    .brand img{ height:36px; }
+
+    nav a{
+      margin-left:26px;
+      text-decoration:none;
+      color:var(--primary);
+      font-weight:500;
+    }
+
+    nav a:hover{ text-decoration:underline; }
+
+    main{
+      max-width:1100px;
+      margin:40px auto;
+      padding:0 20px;
+    }
+
+    h1{ font-size:28px; margin-bottom:6px; }
+
+    .subtitle{
+      color:var(--muted);
+      margin-bottom:28px;
+      font-size:15px;
+    }
+
+    .status{
+      background:var(--white);
+      padding:22px 24px;
+      border-radius:10px;
+      margin-bottom:30px;
+      font-size:15px;
+      line-height:1.5;
+    }
+
+    .status.pending{ border-left:5px solid var(--yellow); }
+    .status.verified{ border-left:5px solid var(--green); }
+
+    .grid{
+      display:grid;
+      grid-template-columns:2fr 1.3fr;
+      gap:24px;
+    }
+
+    .card{
+      background:var(--white);
+      border-radius:10px;
+      padding:24px;
+    }
+
+    .card h2{
+      font-size:18px;
+      margin-bottom:18px;
+    }
+
+    .info{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px 40px;
+    }
+
+    .label{
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
+    .value{
+      font-size:16px;
+      font-weight:500;
+    }
+
+    .guidance{
+      font-size:14.5px;
+      line-height:1.6;
+      color:#1f2937;
+    }
+
+    .guidance p{ margin-bottom:14px; }
+
+    @media(max-width:900px){
+      .grid{ grid-template-columns:1fr; }
+      .info{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Moeezland">
+    <span>My Moeezland</span>
+  </div>
+
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="citizenship.html">Citizenship</a>
+    <a href="settings.html">Settings</a>
+    <a href="#" id="logoutBtn">Logout</a>
+  </nav>
+</header>
+
+<main>
+  <h1>My Citizenship</h1>
+  <div class="subtitle">
+    Official citizenship record maintained by the Moeezland Population Service.
+  </div>
+
+  <!-- STATUS -->
+  <div class="status pending" id="statusBox">
+    Your citizenship record is currently incomplete.
+    Some national services may remain unavailable until verification is completed.
+  </div>
+
+  <div class="grid">
+
+    <!-- INFO -->
+    <div class="card">
+      <h2>Citizen Information</h2>
+
+      <div class="info">
+        <div>
+          <div class="label">Full Name</div>
+          <div class="value" id="fullName">—</div>
+        </div>
+
+        <div>
+          <div class="label">Civil ID Number</div>
+          <div class="value" id="civilId">Not Assigned</div>
+        </div>
+
+        <div>
+          <div class="label">Email Address</div>
+          <div class="value" id="email">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GUIDANCE -->
+    <div class="card">
+      <h2>Citizen Guidance</h2>
+      <div class="guidance" id="guidanceText">
+        <p>
+          This page displays your official citizenship record as stored in the
+          Population System of Moeezland.
+        </p>
+        <p>
+          Verification status determines access to national digital services.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- 🔌 FIREBASE LOGIC -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCs-pheSxe9bkAqnhG9qOjF7RvFfb9k00A",
+    authDomain: "e-civilian-portal2007.firebaseapp.com",
+    projectId: "e-civilian-portal2007",
+    storageBucket: "e-civilian-portal2007.appspot.com",
+    messagingSenderId: "465001179759",
+    appId: "1:465001179759:web:60a45e286fbf1a39ac7b9a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const statusBox = document.getElementById("statusBox");
+  const fullName = document.getElementById("fullName");
+  const civilId = document.getElementById("civilId");
+  const email = document.getElementById("email");
+  const guidanceText = document.getElementById("guidanceText");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    fullName.textContent = data.legalName || "Recorded in system";
+    email.textContent = user.email;
+
+    if (data.civilId && data.civilId.trim() !== "") {
+      civilId.textContent = data.civilId;
+
+      statusBox.classList.remove("pending");
+      statusBox.classList.add("verified");
+      statusBox.innerHTML = `
+        Your citizenship record is verified and officially registered
+        in the Population System of Moeezland.
+      `;
+
+      guidanceText.innerHTML = `
+        <p>Your citizenship has been successfully verified.</p>
+        <p>You now have access to all eligible national digital services.</p>
+      `;
+    }
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
+  });
+</script>
+
+</body>
+</html>

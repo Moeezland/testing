@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moeezland e-Civilian Portal</title>
+
+  <!-- intl-tel-input -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/css/intlTelInput.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/intlTelInput.min.js"></script>
+
+  <style>
+    body{
+      font-family:"Segoe UI",system-ui,sans-serif;
+      background:#edf2f7;
+      min-height:100vh;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .logo img{
+      width:380px;
+      max-width:90%;
+      margin-bottom:18px;
+    }
+
+    .container{
+      background:#fff;
+      border-radius:14px;
+      box-shadow:0 8px 30px rgba(0,0,0,.08);
+      padding:32px 38px;
+      width:380px;
+      max-width:92%;
+    }
+
+    h1{
+      font-size:1.35rem;
+      color:#002e63;
+      margin-bottom:20px;
+      text-align:center;
+    }
+
+    label{
+      font-size:14px;
+      font-weight:500;
+      margin-top:10px;
+      display:block;
+    }
+
+    input{
+      width:100%;
+      padding:11px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      margin-top:4px;
+      font-size:14px;
+    }
+
+    button{
+      width:100%;
+      margin-top:14px;
+      padding:11px;
+      border:none;
+      border-radius:8px;
+      background:#002e63;
+      color:white;
+      font-weight:600;
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .forgot-center{
+      text-align:center;
+      margin-top:10px;
+      font-size:14px;
+      color:#002e63;
+      cursor:pointer;
+      font-weight:500;
+    }
+
+    .switch{
+      margin-top:16px;
+      text-align:center;
+      font-size:14px;
+    }
+
+    .switch span{
+      color:#002e63;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    #message{
+      margin-top:12px;
+      color:#b00020;
+      min-height:20px;
+      text-align:center;
+      font-size:14px;
+    }
+
+    /* RESET MODAL */
+    #resetBox{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      align-items:center;
+      justify-content:center;
+    }
+
+    #resetBox .inner{
+      background:#fff;
+      padding:24px;
+      border-radius:12px;
+      width:340px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">
+  <img src="0d7cc0c7-b1b8-456a-bb2a-0b8bc59a06a4.png">
+</div>
+
+<div class="container">
+  <h1>Moeezland e-Civilian Portal</h1>
+
+  <!-- LOGIN -->
+  <div id="loginSection">
+    <label>Username</label>
+    <input id="loginUsername">
+
+    <label>Password</label>
+    <input type="password" id="loginPassword">
+
+    <button id="loginBtn">Login</button>
+
+    <!-- FIXED POSITION -->
+    <div id="forgotPassword" class="forgot-center">
+      Forgot password?
+    </div>
+
+    <div class="switch">
+      Don’t have an account? <span id="toRegister">Register</span>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="registerSection" style="display:none;">
+    <label>Username</label>
+    <input id="regUsername">
+
+    <label>Email</label>
+    <input type="email" id="regEmail">
+
+    <label>Password</label>
+    <input type="password" id="regPassword">
+
+    <label>Civil ID (optional)</label>
+    <input id="civilId">
+
+    <label>Phone Number (optional)</label>
+    <input type="tel" id="phoneInput">
+
+    <button id="registerBtn">Create Account</button>
+
+    <div class="switch">
+      Already have an account? <span id="toLogin">Login</span>
+    </div>
+  </div>
+
+  <div id="message"></div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div id="resetBox">
+  <div class="inner">
+    <h3>Reset Password</h3>
+    <input type="email" id="resetEmail" placeholder="Enter your registered email">
+    <button id="sendReset">Send Reset Link</button>
+    <div id="resetMsg"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  collection,
+  query,
+  where,
+  getDocs,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCs-pheSxe9bkAqnhG9qOjF7RvFfb9k00A",
+  authDomain: "e-civilian-portal2007.firebaseapp.com",
+  projectId: "e-civilian-portal2007",
+  storageBucket: "e-civilian-portal2007.firebasestorage.app",
+  messagingSenderId: "465001179759",
+  appId: "1:465001179759:web:60a45e286fbf1a39ac7b9a"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const iti = window.intlTelInput ?
+  window.intlTelInput(document.getElementById("phoneInput"), { separateDialCode:true }) : null;
+
+async function exists(field,val){
+  if(!val) return false;
+  const q = query(collection(db,"users"), where(field,"==",val));
+  return !(await getDocs(q)).empty;
+}
+
+/* REGISTER */
+registerBtn.onclick = async () => {
+  const username = regUsername.value.trim();
+  const email = regEmail.value.trim().toLowerCase();
+  const password = regPassword.value.trim();
+  const civil = civilId.value.replace(/\D/g,"");
+  const phone = iti ? iti.getNumber() : "";
+
+  if(!username || !email || !password){
+    message.textContent="Username, email and password are required.";
+    return;
+  }
+
+  if(civil && civil.length !== 10){
+    message.textContent="Civil ID must be 10 digits.";
+    return;
+  }
+
+  try{
+    if(await exists("username_lower",username.toLowerCase())) throw "Username taken";
+    if(await exists("email_lower",email)) throw "Email registered";
+    if(civil && await exists("civilId",civil)) throw "Civil ID used";
+    if(phone && await exists("phone",phone)) throw "Phone used";
+
+    const cred = await createUserWithEmailAndPassword(auth,email,password);
+    const uid = cred.user.uid;
+
+    await runTransaction(db,async tx=>{
+      tx.set(doc(db,"users",uid),{
+        username,
+        username_lower:username.toLowerCase(),
+        email,
+        email_lower:email,
+        civilId:civil || "",
+        phone:phone || "",
+        createdAt:new Date().toISOString()
+      });
+
+      if(civil){
+        const cRef = doc(db,"civil_ids",civil);
+        const snap = await tx.get(cRef);
+        if(!snap.exists()) throw "Civil ID not found";
+        if(snap.data().used) throw "Civil ID used";
+        tx.update(cRef,{used:true,userUID:uid});
+      }
+    });
+
+    window.location.href="dashboard.html";
+  }catch(e){
+    message.textContent=e.toString();
+  }
+};
+
+/* LOGIN */
+loginBtn.onclick = async () => {
+  const u = loginUsername.value.trim().toLowerCase();
+  const p = loginPassword.value.trim();
+
+  const q = query(collection(db,"users"), where("username_lower","==",u));
+  const snap = await getDocs(q);
+  if(snap.empty){ message.textContent="User not found"; return; }
+
+  await signInWithEmailAndPassword(auth,snap.docs[0].data().email,p);
+  window.location.href="dashboard.html";
+};
+
+/* FORGOT PASSWORD */
+forgotPassword.onclick = ()=> resetBox.style.display="flex";
+
+sendReset.onclick = async ()=>{
+  const email = resetEmail.value.trim();
+  if(!email){ resetMsg.textContent="Enter your email"; return; }
+  try{
+    await sendPasswordResetEmail(auth,email);
+    resetMsg.textContent="Reset link sent. Check your email.";
+  }catch{
+    resetMsg.textContent="Invalid or unregistered email.";
+  }
+};
+
+toRegister.onclick = ()=>{ loginSection.style.display="none"; registerSection.style.display="block"; };
+toLogin.onclick = ()=>{ registerSection.style.display="none"; loginSection.style.display="block"; };
+</script>
+
+</body>
+</html>

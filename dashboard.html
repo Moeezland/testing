@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | Moeezland</title>
+
+  <style>
+    :root{
+      --primary:#002e63;
+      --bg:#edf2f7;
+      --white:#ffffff;
+      --muted:#4a5568;
+      --border:#e2e8f0;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:"Segoe UI",system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--primary);
+    }
+
+    header{
+      background:var(--white);
+      border-bottom:1px solid var(--border);
+      padding:14px 28px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:18px;
+      font-weight:600;
+    }
+
+    .brand img{ height:36px; }
+
+    nav a{
+      margin-left:26px;
+      text-decoration:none;
+      color:var(--primary);
+      font-weight:500;
+    }
+
+    nav a:hover{ text-decoration:underline; }
+
+    main{
+      max-width:1100px;
+      margin:40px auto;
+      padding:0 20px;
+    }
+
+    h1{
+      font-size:28px;
+      margin-bottom:6px;
+    }
+
+    .subtitle{
+      color:var(--muted);
+      margin-bottom:28px;
+      font-size:15px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:2.2fr 1.2fr;
+      gap:24px;
+    }
+
+    .card{
+      background:var(--white);
+      border-radius:10px;
+      padding:24px;
+    }
+
+    .services{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:18px;
+    }
+
+    /* SERVICE ITEM */
+    .service{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:16px;
+      cursor:pointer;
+    }
+
+    .service-icon{
+      width:34px;
+      height:34px;
+      border-radius:6px;
+      background:#edf2f7;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+
+    .service-icon img{
+      width:20px;
+      height:20px;
+      object-fit:contain;
+    }
+
+    .service-content{
+      flex:1;
+    }
+
+    .service-title{
+      font-weight:600;
+      margin-bottom:4px;
+    }
+
+    .service small{
+      color:var(--muted);
+      font-weight:400;
+    }
+
+    /* 🔒 LOCKED */
+    .service.locked{
+      opacity:0.4;
+      pointer-events:none;
+    }
+
+    .guidance{
+      font-size:14.5px;
+      line-height:1.6;
+      color:#1f2937;
+    }
+
+    .guidance p{
+      margin-bottom:14px;
+    }
+
+    @media(max-width:900px){
+      .grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Moeezland">
+    <span>My Moeezland</span>
+  </div>
+
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="citizenship.html">Citizenship</a>
+    <a href="settings.html">Settings</a>
+    <a href="#" id="logoutBtn">Logout</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Dashboard</h1>
+  <div class="subtitle">
+    National digital services available to registered citizens.
+  </div>
+
+  <div class="grid">
+
+    <!-- SERVICES -->
+    <div class="card">
+      <div class="services">
+
+        <div class="service" data-service>
+          <div class="service-icon">
+            <!-- replace src later -->
+            <img src="icons/id.svg" alt="">
+          </div>
+          <div class="service-content">
+            <div class="service-title">Civil ID</div>
+            <small>View and manage your digital civil identification</small>
+          </div>
+        </div>
+
+        <div class="service" data-service>
+          <div class="service-icon">
+            <img src="icons/passport.svg" alt="">
+          </div>
+          <div class="service-content">
+            <div class="service-title">Passport</div>
+            <small>Apply for and manage passport services</small>
+          </div>
+        </div>
+
+        <div class="service" data-service>
+          <div class="service-icon">
+            <img src="icons/civil.svg" alt="">
+          </div>
+          <div class="service-content">
+            <div class="service-title">Civil Affairs</div>
+            <small>Submit civil-related applications and records</small>
+          </div>
+        </div>
+
+        <div class="service locked">
+          <div class="service-icon">
+            <img src="icons/vote.svg" alt="">
+          </div>
+          <div class="service-content">
+            <div class="service-title">Voting</div>
+            <small>Unavailable at this time</small>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- GUIDANCE -->
+    <div class="card">
+      <div class="guidance" id="guidanceText">
+        <p>This dashboard provides access to Moeezland’s national digital services.</p>
+        <p>Availability of services depends on your citizenship verification status.</p>
+        <p>Services will unlock automatically once your Civil ID is assigned.</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- FIREBASE LOGIC (UNCHANGED) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCs-pheSxe9bkAqnhG9qOjF7RvFfb9k00A",
+    authDomain: "e-civilian-portal2007.firebaseapp.com",
+    projectId: "e-civilian-portal2007",
+    storageBucket: "e-civilian-portal2007.appspot.com",
+    messagingSenderId: "465001179759",
+    appId: "1:465001179759:web:60a45e286fbf1a39ac7b9a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const services = document.querySelectorAll("[data-service]");
+  const guidanceText = document.getElementById("guidanceText");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    if (!data.civilId || data.civilId.trim() === "") {
+      services.forEach(s => s.classList.add("locked"));
+      guidanceText.innerHTML = `
+        <p>Your citizenship record is not yet verified.</p>
+        <p>National services are unavailable until a Civil ID is assigned.</p>
+        <p>Please complete verification via the Citizenship page.</p>
+      `;
+    }
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings | Moeezland</title>
+
+  <style>
+    :root{
+      --primary:#002e63;
+      --bg:#edf2f7;
+      --white:#ffffff;
+      --muted:#4a5568;
+      --border:#e2e8f0;
+      --warning:#b7791f;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family:"Segoe UI",system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--primary);
+    }
+
+    header{
+      background:var(--white);
+      border-bottom:1px solid var(--border);
+      padding:14px 28px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:18px;
+      font-weight:600;
+    }
+
+    .brand img{ height:36px; }
+
+    nav a{
+      margin-left:26px;
+      text-decoration:none;
+      color:var(--primary);
+      font-weight:500;
+    }
+
+    nav a:hover{ text-decoration:underline; }
+
+    main{
+      max-width:700px;
+      margin:40px auto;
+      padding:0 20px;
+    }
+
+    h1{ font-size:28px; margin-bottom:6px; }
+
+    .subtitle{
+      color:var(--muted);
+      margin-bottom:28px;
+      font-size:15px;
+    }
+
+    .card{
+      background:var(--white);
+      border-radius:10px;
+      padding:24px;
+    }
+
+    .setting{
+      margin-bottom:28px;
+    }
+
+    .setting h2{
+      font-size:17px;
+      margin-bottom:6px;
+    }
+
+    .setting p{
+      font-size:14.5px;
+      color:#1f2937;
+      margin-bottom:10px;
+    }
+
+    .policy{
+      font-size:14px;
+      color:#1f2937;
+      background:#fffaf0;
+      border-left:4px solid var(--warning);
+      padding:12px 14px;
+      border-radius:6px;
+    }
+
+    input{
+      width:100%;
+      padding:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      margin-bottom:10px;
+      font-size:14px;
+    }
+
+    button{
+      background:var(--primary);
+      color:white;
+      border:none;
+      padding:10px 16px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:14px;
+    }
+
+    .msg{
+      margin-top:10px;
+      font-size:14px;
+      color:#1f2937;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Moeezland">
+    <span>My Moeezland</span>
+  </div>
+
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="citizenship.html">Citizenship</a>
+    <a href="settings.html">Settings</a>
+    <a href="#" id="logoutBtn">Logout</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Settings</h1>
+  <div class="subtitle">
+    Manage your account security and access preferences.
+  </div>
+
+  <div class="card">
+
+    <!-- CHANGE EMAIL (POLICY ONLY) -->
+    <div class="setting">
+      <h2>Change Email Address</h2>
+      <p>
+        For security and identity integrity reasons, email addresses cannot be
+        changed directly through the e-Civilian Portal.
+      </p>
+
+      <div class="policy">
+        To change your registered email address, please contact
+        <strong>support@moeezland.com</strong>.
+        Your account will be reviewed and reissued if necessary.
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div class="setting">
+      <h2>Reset Password</h2>
+      <p>
+        Enter your registered email address to receive a secure password
+        reset link.
+      </p>
+
+      <input type="email" id="resetEmail" placeholder="you@example.com">
+      <button id="resetBtn">Send Reset Link</button>
+      <div class="msg" id="resetMsg"></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- 🔌 FIREBASE LOGIC -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCs-pheSxe9bkAqnhG9qOjF7RvFfb9k00A",
+    authDomain: "e-civilian-portal2007.firebaseapp.com",
+    projectId: "e-civilian-portal2007",
+    storageBucket: "e-civilian-portal2007.appspot.com",
+    messagingSenderId: "465001179759",
+    appId: "1:465001179759:web:60a45e286fbf1a39ac7b9a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const resetBtn = document.getElementById("resetBtn");
+  const resetEmail = document.getElementById("resetEmail");
+  const resetMsg = document.getElementById("resetMsg");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    }
+  });
+
+  resetBtn.addEventListener("click", async () => {
+    const email = resetEmail.value.trim();
+
+    if (!email) {
+      resetMsg.textContent = "Please enter your registered email address.";
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      resetMsg.textContent =
+        "Password reset link sent. Please check your email inbox.";
+    } catch (err) {
+      resetMsg.textContent =
+        "Unable to send reset link. Please ensure the email is correct.";
+    }
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
+  });
+</script>
+
+</body>
+</html>
