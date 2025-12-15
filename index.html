@@ -17,11 +17,9 @@
       min-height:100vh;
       margin:0;
       display:flex;
-      flex-direction:column;
       align-items:center;
       justify-content:center;
     }
-    .logo img{ width:380px; max-width:90%; margin-bottom:18px; }
     .container{
       background:#fff;
       border-radius:14px;
@@ -30,25 +28,24 @@
       width:380px;
       max-width:92%;
     }
-    h1{ font-size:1.35rem; color:#002e63; margin-bottom:20px; text-align:center; }
+    h1{ text-align:center; color:#002e63; }
     label{ font-size:14px; font-weight:500; margin-top:10px; display:block; }
     input{ width:100%; padding:11px; border-radius:8px; border:1px solid #ccc; margin-top:4px; }
     button{
       width:100%; margin-top:14px; padding:11px;
       border:none; border-radius:8px;
       background:#002e63; color:white; font-weight:600;
+      cursor:pointer;
     }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
     .forgot-center{ text-align:center; margin-top:10px; color:#002e63; cursor:pointer; }
     .switch{ margin-top:16px; text-align:center; }
     .switch span{ color:#002e63; font-weight:600; cursor:pointer; }
     #message{ margin-top:12px; color:#b00020; text-align:center; min-height:20px; }
+    #capsWarn{ font-size:13px; color:#d97706; display:none; }
   </style>
 </head>
 <body>
-
-<div class="logo">
-  <img src="0d7cc0c7-b1b8-456a-bb2a-0b8bc59a06a4.png">
-</div>
 
 <div class="container">
   <h1>Moeezland e-Civilian Portal</h1>
@@ -57,10 +54,13 @@
   <div id="loginSection">
     <label>Username</label>
     <input id="loginUsername">
+
     <label>Password</label>
     <input type="password" id="loginPassword">
+    <div id="capsWarn">⚠ Caps Lock is ON</div>
+
     <button id="loginBtn">Login</button>
-    <div id="forgotPassword" class="forgot-center">Forgot password?</div>
+    <div class="forgot-center">Forgot password?</div>
     <div class="switch">Don’t have an account? <span id="toRegister">Register</span></div>
   </div>
 
@@ -96,100 +96,67 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { getFirestore, doc, collection, query, where, getDocs, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyCs-pheSxe9bkAqnhG9qOjF7RvFfb9k00A",
   authDomain: "e-civilian-portal2007.firebaseapp.com",
   projectId: "e-civilian-portal2007"
-};
+});
 
-const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const iti = window.intlTelInput(phoneInput, {
-  separateDialCode:true,
-  utilsScript:"https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.1/js/utils.js"
+/* CAPS LOCK WARNING */
+loginPassword.addEventListener("keyup", e=>{
+  capsWarn.style.display = e.getModifierState("CapsLock") ? "block" : "none";
 });
 
-async function exists(field,val){
-  if(!val) return false;
-  const q = query(collection(db,"users"), where(field,"==",val));
-  return !(await getDocs(q)).empty;
-}
+/* ENTER TO LOGIN */
+[loginUsername, loginPassword].forEach(el=>{
+  el.addEventListener("keydown", e=>{
+    if(e.key==="Enter") loginBtn.click();
+  });
+});
 
-/* REGISTER (FIXED ORDER) */
-registerBtn.onclick = async () => {
-  message.textContent = "";
-
-  const legalName = regLegalName.value.trim();
-  const username = regUsername.value.trim();
-  const email = regEmail.value.trim().toLowerCase();
-  const password = regPassword.value.trim();
-  const civil = civilId.value.replace(/\D/g,"");
-  const phone = iti.isValidNumber()
-    ? iti.getNumber(intlTelInputUtils.numberFormat.E164)
-    : "";
-
-  if(!legalName || !username || !email || !password){
-    message.textContent="Full name, username, email and password are required.";
-    return;
-  }
-
-  try{
-    if(await exists("username_lower",username.toLowerCase()))
-      throw "Username already taken.";
-
-    if(await exists("email_lower",email))
-      throw "Email already registered.";
-
-    if(phone && await exists("phone",phone))
-      throw "Phone number already registered.";
-
-    // 🔒 CIVIL ID CHECK FIRST (NO AUTH YET)
-    if(civil){
-      if(civil.length !== 10) throw "Civil ID must be 10 digits.";
-      const cRef = doc(db,"civil_ids",civil);
-      const snap = await getDoc(cRef);
-      if(!snap.exists()) throw "Civil ID not found.";
-      if(snap.data().used) throw "Civil ID already used.";
-    }
-
-    // ✅ SAFE TO CREATE AUTH USER
-    const cred = await createUserWithEmailAndPassword(auth,email,password);
-    const uid = cred.user.uid;
-
-    await runTransaction(db, async tx=>{
-      tx.set(doc(db,"users",uid),{
-        legalName,
-        username,
-        username_lower:username.toLowerCase(),
-        email,
-        email_lower:email,
-        civilId:civil || "",
-        phone:phone || "",
-        createdAt:new Date().toISOString()
-      });
-
-      if(civil){
-        tx.update(doc(db,"civil_ids",civil),{used:true,userUID:uid});
-      }
-    });
-
-    window.location.href="dashboard.html";
-  }catch(e){
-    message.textContent = typeof e === "string" ? e : "Registration failed. Please try again.";
-  }
-};
+/* RATE LIMIT */
+let attempts = 0;
+let lockedUntil = 0;
 
 /* LOGIN */
 loginBtn.onclick = async ()=>{
-  const u = loginUsername.value.trim().toLowerCase();
-  const p = loginPassword.value.trim();
-  const q = query(collection(db,"users"), where("username_lower","==",u));
-  const snap = await getDocs(q);
-  if(snap.empty){ message.textContent="User not found."; return; }
-  await signInWithEmailAndPassword(auth,snap.docs[0].data().email,p);
-  window.location.href="dashboard.html";
+  const now = Date.now();
+  if(now < lockedUntil){
+    message.textContent="Too many failed attempts. Try again in 30 seconds.";
+    return;
+  }
+
+  message.textContent="";
+  loginBtn.disabled = true;
+  loginBtn.textContent = "Signing in…";
+
+  try{
+    const u = loginUsername.value.trim().toLowerCase();
+    const p = loginPassword.value.trim();
+
+    const q = query(collection(db,"users"), where("username_lower","==",u));
+    const snap = await getDocs(q);
+    if(snap.empty) throw "User not found.";
+
+    await signInWithEmailAndPassword(auth,snap.docs[0].data().email,p);
+    attempts = 0;
+    window.location.href="dashboard.html";
+
+  }catch(e){
+    attempts++;
+    if(attempts >= 5){
+      lockedUntil = Date.now() + 30000;
+      message.textContent="Too many failed attempts. Login locked for 30 seconds.";
+    }else{
+      message.textContent = e==="User not found." ? e : "Incorrect password.";
+    }
+  }finally{
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Login";
+  }
 };
 
 toRegister.onclick = ()=>{ loginSection.style.display="none"; registerSection.style.display="block"; };
